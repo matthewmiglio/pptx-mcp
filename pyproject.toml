@@ -1,0 +1,21 @@
+[project]
+name = "pptx-mcp"
+version = "0.1.0"
+description = "MCP server for authoring and rendering PowerPoint decks via python-pptx + LibreOffice"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "python-pptx>=1.0.2",
+    "Pillow>=10.0.0",
+    "pypdfium2>=4.30.0",
+]
+
+[project.scripts]
+pptx-mcp = "pptx_mcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
