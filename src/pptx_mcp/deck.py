@@ -69,10 +69,17 @@ class DeckHandle:
     deck_id: str
     path: Path
     prs: Presentation
+    mtime_ns: int = 0  # last-seen disk mtime; used to detect external edits
 
     @property
     def render_dir(self) -> Path:
         return self.path.parent / "renders"
+
+    def stamp_mtime(self) -> None:
+        try:
+            self.mtime_ns = self.path.stat().st_mtime_ns
+        except FileNotFoundError:
+            self.mtime_ns = 0
 
 
 class DeckManager:
@@ -94,24 +101,43 @@ class DeckManager:
         path = deck_dir / "deck.pptx"
         prs.save(str(path))
         h = DeckHandle(deck_id, path, prs)
+        h.stamp_mtime()
         self._open[deck_id] = h
         return h
 
     def open(self, deck_id: str) -> DeckHandle:
         _validate_id(deck_id)
         if deck_id in self._open:
+            # auto-refresh if external edits happened on disk
+            self._refresh_if_stale(self._open[deck_id])
             return self._open[deck_id]
         path = self.root / deck_id / "deck.pptx"
         if not path.exists():
             raise FileNotFoundError(f"no deck '{deck_id}' at {path}")
         h = DeckHandle(deck_id, path, Presentation(str(path)))
+        h.stamp_mtime()
         self._open[deck_id] = h
         return h
 
     def get(self, deck_id: str) -> DeckHandle:
         if deck_id in self._open:
+            self._refresh_if_stale(self._open[deck_id])
             return self._open[deck_id]
         return self.open(deck_id)
+
+    def _refresh_if_stale(self, h: DeckHandle) -> None:
+        """Reload prs from disk if the file's mtime is newer than what we cached.
+
+        Lets users edit the .pptx externally (PowerPoint, Keynote, etc.) without
+        their changes getting overwritten by our in-memory copy on next save.
+        """
+        try:
+            disk_mtime = h.path.stat().st_mtime_ns
+        except FileNotFoundError:
+            return
+        if disk_mtime > h.mtime_ns:
+            h.prs = Presentation(str(h.path))
+            h.mtime_ns = disk_mtime
 
     def close(self, deck_id: str) -> None:
         self._open.pop(deck_id, None)
@@ -119,6 +145,7 @@ class DeckManager:
     def save(self, deck_id: str) -> str:
         h = self.get(deck_id)
         h.prs.save(str(h.path))
+        h.stamp_mtime()
         return str(h.path)
 
     def list_decks(self) -> list[dict]:
