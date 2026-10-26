@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "MCP server for authoring and rendering PowerPoint decks via python-pptx + LibreOffice"
 requires-python = ">=3.10"
 dependencies = [
-    "mcp>=1.0.0",
+    "mcp>=1.0.0,<2",
     "python-pptx>=1.0.2",
     "Pillow>=10.0.0",
     "pypdfium2>=4.30.0",
