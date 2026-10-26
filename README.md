@@ -27,7 +27,7 @@ python -m venv .venv
 Register with Claude Code:
 
 ```powershell
-claude mcp add pptx -s user -- "C:\My_Files\my_programs\pptx-mcp\.venv\Scripts\python.exe" -m pptx_mcp.server
+claude mcp add pptx -s user -- "M:\my_files\my_programs\pptx-mcp\.venv\Scripts\python.exe" -m pptx_mcp.server
 ```
 
 Optional env: `PPTX_MCP_ROOT` (deck directory), `SOFFICE` (path to `soffice.exe`).
